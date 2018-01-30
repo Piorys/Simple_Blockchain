@@ -21,6 +21,7 @@ public class Block {
         String calculatedHash = StringUtil.applySha256(
                 previousHash +
                 Long.toString(timeStamp) +
+                Integer.toString(nonce) +
                 data
 
         );
