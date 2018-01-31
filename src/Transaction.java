@@ -48,4 +48,60 @@ public class Transaction {
         return StringUtil.verifyECDSASig(sender,data,signature);
     }
 
+    //Returns true if new transation can be created
+    public boolean processTransaction(){
+       if(!verifySignature()){
+           System.out.println("#Transaction signature failed to verify");
+           return false;
+
+        }
+        // gather transaction inputs, make sure they are unspent
+        for(TransactionInput i : inputs){
+           i.UTXO = Main.UTXOs.get(i.transactionOutputId);
+        }
+
+        //check if transaction is valid
+        if(getInputsValue() < Main.minimumTransaction) {
+            System.out.println("#Transaction inputs too small: "+ getInputsValue());
+        }
+
+        //Generate transaction outputs
+        float leftOver = getInputsValue() - value;
+        transactionId = calculateHash();
+        outputs.add(new TransactionOutput(this.reciepent,value,transactionId));
+        outputs.add(new TransactionOutput(this.sender, leftOver, transactionId));
+
+        //add outputs to Unspent list
+        for(TransactionOutput o : outputs){
+            Main.UTXOs.put(o.id,o);
+        }
+
+        //Remove transaction inputs from UTXO lists as spent
+        for(TransactionInput i :inputs){
+            if(i.UTXO == null) continue;
+            Main.UTXOs.remove(i.UTXO.id);
+        }
+
+    return true;
+    }
+
+    //Return sum of inputs(UTXOs) values
+    public float getInputsValue(){
+        float total = 0;
+        for(TransactionInput i : inputs){
+            if(i.UTXO==null) continue;
+            total += i.UTXO.value;
+        }
+        return total;
+    }
+
+    //Return sum of outputs
+    public float getOutputsValue(){
+        float total = 0;
+        for(TransactionOutput o: outputs){
+            total += o.value;
+        }
+        return total;
+    }
+
 }
